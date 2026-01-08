@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "mcp__claude-appsscript-pro__get_spreadsheet_metadata",
+      "mcp__claude-appsscript-pro__read_sheet_data",
+      "mcp__claude-appsscript-pro__create_apps_script_system",
+      "mcp__claude-appsscript-pro__deploy_webapp",
+      "mcp__claude-appsscript-pro__get_script_file_contents",
+      "mcp__claude-appsscript-pro__update_script_file",
+      "mcp__claude-appsscript-pro__smart_update_webapp",
+      "mcp__claude-appsscript-pro__apply_enhanced_patch"
+    ]
+  }
+}

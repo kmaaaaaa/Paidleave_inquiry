@@ -1,0 +1,21 @@
+Claude-AppsScript-Pro MCP Server v3.0.0
+Phase: All-in-One Suite (61 tools implemented)
+PID: 27120
+Start Time: 2026-01-08T08:59:04.811Z
+Command: C:\Program Files\nodejs\node.exe C:\Users\KosukeMaeda\Documents\claude-appsscript-pro\server.js
+Working Dir: C:\Users\KosukeMaeda\Documents\Paidleave_inquiry
+Script Path: C:\Users\KosukeMaeda\Documents\claude-appsscript-pro\server.js
+Server Dir: C:\Users\KosukeMaeda\Documents\claude-appsscript-pro
+Node Version: v22.16.0
+Platform: win32
+Architecture: x64
+
+PowerShell Process Check Command:
+Get-Process -Id 27120
+
+Claude Code Process Check Command:
+ps -p 27120
+
+Kill Process Command (if needed):
+PowerShell: Stop-Process -Id 27120
+Claude Code: kill 27120
