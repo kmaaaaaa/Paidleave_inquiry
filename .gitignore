@@ -1,0 +1,24 @@
+# 一時ファイル
+.tmp/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node.js (将来的にローカル開発環境を追加する場合)
+node_modules/
+npm-debug.log
+
+# 環境設定（機密情報を含む可能性）
+.env
+.env.local
+*.env
+
+# clasp credentials
+.clasprc.json
