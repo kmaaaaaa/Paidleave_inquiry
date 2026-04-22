@@ -8,6 +8,7 @@ Slackで `@oyasumi_inquiry` をメンションすると、呼び出したユー�
 - ユーザー名付きの返信メッセージ
 - 重複リアクション防止（Slackリトライ対策）
 - スレッド返信による通知
+- Workflow Builder 等アプリ経由のメンションにも対応（案 B: `event.user` が存在する場合のみ応答）
 
 ## システム構成
 
@@ -19,7 +20,7 @@ sequenceDiagram
     participant SS as Google Sheets
 
     U->>S: @oyasumi_inquiry メンション
-    S->>G: Event API (app_mention)
+    S->>G: Event API (app_mention / message.channels)
     G->>G: 重複チェック (CacheService)
     G->>SS: C列検索（User ID）
     SS-->>G: A列（氏名）+ Y列（残日数）
@@ -62,6 +63,7 @@ sequenceDiagram
 |---------|------|
 | `app_mentions:read` | メンション検知 |
 | `chat:write` | メッセージ投稿 |
+| `channels:history` | パブリックチャンネルのメッセージ受信（アプリ経由メンション対応） |
 
 ### 3. GAS Webアプリのデプロイ
 
@@ -86,6 +88,9 @@ sequenceDiagram
 | `SLACK_SIGNING_SECRET` | Slack AppのSigning Secret |
 | `SPREADSHEET_ID` | `1HpeLLzMprhRCKX1Xc_9FjjAOEODEYl4-ISSQh3pHGWs` |
 | `SHEET_NAME` | `有給管理表` |
+| `BOT_USER_ID` | Bot の User ID（`U...`）— `auth.test` API の `user_id` または `@oyasumi_inquiry` のMember ID |
+| `OUR_BOT_ID` | Bot ID（`B...`）— `auth.test` API の `bot_id` |
+| `OUR_APP_ID` | App ID（`A...`）— Slack App管理画面「Basic Information」→ App Credentials |
 
 **Bot Token の取得方法:**
 - Slack App管理画面 → **OAuth & Permissions** → **Bot User OAuth Token**
@@ -101,14 +106,24 @@ sequenceDiagram
    - 検証が成功すると「Verified」と表示される
 4. **Subscribe to bot events** で「Add Bot User Event」をクリック
 5. `app_mention` を追加
-6. 「Save Changes」をクリック
+6. 同様に `message.channels` を追加
+7. 「Save Changes」をクリック
 
-### 6. Slack Appのインストール
+### 6. Slack App のワークスペース再インストール
 
 1. **OAuth & Permissions** → **Install to Workspace** をクリック
 2. 権限を確認して「許可する」
 
-### 7. 動作確認
+**⚠️ 注意**: スコープ追加後（手順 2）は必ず再インストール（**Install to Workspace**）を再実行すること。スコープが反映されないと新機能が動作しません。
+
+### 7. 動作確認（アプリメンション対応後の注意）
+
+**⚠️ 重要**: 以下の 3 点が正しく設定されていることが必須です:
+- `BOT_USER_ID`, `OUR_BOT_ID`, `OUR_APP_ID` が Script Properties に登録されている
+- Slack App 管理画面で `message.channels` が Event Subscriptions に追加されている
+- Workflow Builder を利用する場合、そのステップで人間ユーザー情報（`event.user`）が Bot に渡されている（案 B の制約）
+
+実行手順
 
 1. Slack Appを使用するチャンネルに `/invite @oyasumi_inquiry` で招待
 2. チャンネルで `@oyasumi_inquiry` をメンション
@@ -156,6 +171,13 @@ Apps Script Editorから以下の関数を実行してテスト可能:
 - Apps Script Editorの「実行数」で実行ログを確認
 - Bot TokenとSigning Secretが正しく設定されているか確認
 
+### アプリ経由メンションで返信が来ない
+
+- `BOT_USER_ID`, `OUR_BOT_ID`, `OUR_APP_ID` が Script Properties に正しく設定されているか確認
+- `BOT_USER_ID` は `auth.test` API で確認できます（`curl -X POST https://slack.com/api/auth.test -H "Authorization: Bearer xoxb-..."` を実行）
+- Slack App 管理画面で `message.channels` イベントが Event Subscriptions に追加されているか確認
+- スコープ追加後に「Install to Workspace」を再実行したか確認
+
 ### 「Verified」にならない
 
 - WebアプリのURLが正しいか確認（`/exec`で終わる）
@@ -165,6 +187,22 @@ Apps Script Editorから以下の関数を実行してテスト可能:
 
 - 通常は重複防止機能で対策済み
 - 問題が続く場合はApps Scriptの実行ログを確認
+
+## 既知の制約（Known Limitations）
+
+本リリースでは以下の項目がスコープ外となっています。今後の改修で対応予定です：
+
+### OOS-1: Slack 署名検証（HMAC）の未実装
+
+- 現在、`SLACK_SIGNING_SECRET` を保持していますが、Slack からのリクエストに対する HMAC 検証処理がありません
+- `message.channels` 購読により GAS エンドポイントへのアクセス量が増加するため、セキュリティ強化が今後必須です
+- 別 Issue で対応予定
+
+### OOS-2: 既存の `X-Slack-Retry-Num` 検出ロジックの実効性欠如
+
+- `Code.gs` の既存ロジックは GAS `doPost(e)` の設計上、HTTP ヘッダに直接アクセスできないため機能していません
+- 現状の重複防止は実質的に `event_id` キャッシュのみで機能しており、新たに追加された `channel + ts` 補助キャッシュで十分に担保されています
+- 削除または別手法への置換は別 Issue で管理します
 
 ## 更新手順
 
